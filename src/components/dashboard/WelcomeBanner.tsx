@@ -148,11 +148,11 @@ export function WelcomeBanner({ actionRight }: WelcomeBannerProps) {
         </div>
 
         <div className="relative w-full flex-1 mt-auto">
-          <div className="absolute top-[0px] left-[18px] text-[12px] text-white/90 z-10">(h)</div>
+          <div className="absolute top-[0px] left-[18px] text-[12px] text-white/90 z-10">(m)</div>
           <div className="absolute inset-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={[...chartData, { name: "(day)", hours: chartData[chartData.length - 1]?.hours ? chartData[chartData.length - 1].hours * 1.1 : 0 }]}
+                data={[...chartData, { name: "(day)", rawMinutes: chartData[chartData.length - 1]?.rawMinutes ? chartData[chartData.length - 1].rawMinutes * 1.1 : 0 }]}
                 margin={{ top: 35, right: 30, left: -5, bottom: 20 }}
               >
                 <defs>
@@ -191,7 +191,7 @@ export function WelcomeBanner({ actionRight }: WelcomeBannerProps) {
                 />
                 <Area
                   type="monotone"
-                  dataKey="hours"
+                  dataKey="rawMinutes"
                   stroke="#45FFCA"
                   strokeWidth={2.5}
                   fillOpacity={1}
