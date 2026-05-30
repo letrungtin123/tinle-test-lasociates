@@ -431,18 +431,38 @@ export function LessonDetailPage() {
                       );
                     }
 
+                    // Carousel (2+ ảnh) → render carousel không border, text (nếu có) trong card riêng bên dưới
+                    if (images.length >= 2) {
+                      return (
+                        <div key={comp.id} className="flex flex-col gap-5">
+                          <LessonImageCarousel
+                            images={images}
+                            onImageClick={(src) => setLightboxSrc(src)}
+                          />
+                          {finalHtml.trim() && (
+                            <div className="rounded-3xl border border-border px-8 py-7 shadow-sm bg-card">
+                              <div
+                                className="prose max-w-none text-[14px] 2xl:text-[16px] font-normal leading-[18px] 2xl:leading-[24px] text-foreground/80 dark:prose-invert dark:text-foreground [&>*:first-child]:!mt-0 [&>*:last-child]:!mb-0 [&_p]:!text-[14px] 2xl:[&_p]:!text-[16px] [&_p]:!font-normal [&_p]:!leading-[18px] 2xl:[&_p]:!leading-[24px] [&_span]:!text-[14px] 2xl:[&_span]:!text-[16px] [&_span]:!font-normal [&_span]:!leading-[18px] 2xl:[&_span]:!leading-[24px] [&_li]:!text-[14px] 2xl:[&_li]:!text-[16px] [&_li]:!font-normal [&_li]:!leading-[18px] 2xl:[&_li]:!leading-[24px] [&_div]:!text-[14px] 2xl:[&_div]:!text-[16px] [&_div]:!font-normal [&_div]:!leading-[18px] 2xl:[&_div]:!leading-[24px] [&_h1]:!text-[28px] 2xl:[&_h1]:!text-[34px] [&_h1]:!font-semibold [&_h1]:!leading-[36px] 2xl:[&_h1]:!leading-[42px] [&_h1]:!mt-6 [&_h1]:!mb-3 [&_h1]:!text-foreground [&_h2]:!text-[22px] 2xl:[&_h2]:!text-[26px] [&_h2]:!font-bold [&_h2]:!leading-[28px] 2xl:[&_h2]:!leading-[34px] [&_h2]:!mt-5 [&_h2]:!mb-2 [&_h2]:!text-foreground [&_h3]:!text-[18px] 2xl:[&_h3]:!text-[20px] [&_h3]:!font-semibold [&_h3]:!leading-[24px] 2xl:[&_h3]:!leading-[28px] [&_h3]:!mt-4 [&_h3]:!mb-1 [&_h3]:!text-foreground [&_img]:!cursor-zoom-in"
+                                dangerouslySetInnerHTML={{ __html: finalHtml }}
+                                onClick={(e) => {
+                                  const target = e.target as HTMLElement;
+                                  if (target.tagName === "IMG") {
+                                    setLightboxSrc((target as HTMLImageElement).src);
+                                  }
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
                     return (
                       <div key={comp.id} className="rounded-3xl border border-border px-8 py-7 shadow-sm bg-card">
                         {comp.displayName && !hasImage && (
                           <div className="mb-4 inline-block">
                             <BadgeCyan><span className="uppercase">{comp.displayName}</span></BadgeCyan>
                           </div>
-                        )}
-                        {images.length >= 2 && (
-                          <LessonImageCarousel
-                            images={images}
-                            onImageClick={(src) => setLightboxSrc(src)}
-                          />
                         )}
                         {finalHtml.trim() && (
                           <div
