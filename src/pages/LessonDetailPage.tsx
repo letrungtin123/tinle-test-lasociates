@@ -372,12 +372,19 @@ export function LessonDetailPage() {
                     let images: { src: string; alt: string }[] = [];
                     let finalHtml = cleanHtml;
                     let hasImage = false;
+                    let isImageOnly = false;
 
                     try {
                       const parser = new DOMParser();
                       const doc = parser.parseFromString(cleanHtml, 'text/html');
                       const imgEls = doc.querySelectorAll('img');
                       hasImage = imgEls.length > 0;
+
+                      // Kiểm tra xem nội dung chỉ có ảnh mà không có text thực sự
+                      const cloneDoc = doc.cloneNode(true) as Document;
+                      cloneDoc.querySelectorAll('img').forEach(img => img.remove());
+                      const textOnly = cloneDoc.body.textContent?.trim() || '';
+                      isImageOnly = hasImage && textOnly.length === 0;
 
                       if (imgEls.length >= 2) {
                         images = Array.from(imgEls).map(img => ({
@@ -397,6 +404,31 @@ export function LessonDetailPage() {
                       }
                     } catch (e) {
                       console.error("Failed to parse HTML for carousel", e);
+                    }
+
+                    // Nếu chỉ có ảnh, không có text → render full width, không cần khung border cha
+                    if (isImageOnly) {
+                      return (
+                        <div key={comp.id} className="w-full">
+                          {images.length >= 2 ? (
+                            <LessonImageCarousel
+                              images={images}
+                              onImageClick={(src) => setLightboxSrc(src)}
+                            />
+                          ) : (
+                            <div
+                              className="prose max-w-none [&_img]:!w-full [&_img]:!max-w-none [&_img]:!rounded-2xl [&_img]:!cursor-zoom-in [&_img]:!my-0 [&_p]:!m-0 [&>*:first-child]:!mt-0 [&>*:last-child]:!mb-0"
+                              dangerouslySetInnerHTML={{ __html: finalHtml }}
+                              onClick={(e) => {
+                                const target = e.target as HTMLElement;
+                                if (target.tagName === "IMG") {
+                                  setLightboxSrc((target as HTMLImageElement).src);
+                                }
+                              }}
+                            />
+                          )}
+                        </div>
+                      );
                     }
 
                     return (
