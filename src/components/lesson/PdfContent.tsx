@@ -3,7 +3,8 @@
 //
 // Passive block: completion được FE tự mark khi learner vào unit.
 // Layout clean với header bar + fullscreen toggle.
-// Zoom: CSS transform scale qua Ctrl+wheel, không dùng native zoom.
+// Chế độ mini: toolbar ẩn, không cho zoom.
+// Chế độ fullscreen: xem toàn màn hình.
 // ============================================================
 
 import { useQuery } from "@tanstack/react-query";
@@ -21,7 +22,7 @@ interface PdfData {
 
 /**
  * Chuyển Google Drive share link → embed preview link.
- * Với URL trực tiếp (asset), ẩn toolbar + navpanes, fit width.
+ * Với URL trực tiếp (asset), ẩn toolbar, fit width.
  */
 function toEmbedUrl(url: string): string {
   if (!url.trim()) return "";
@@ -38,43 +39,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const pdfWrapperRef = useRef<HTMLDivElement>(null);
-
-  // ── Custom zoom via CSS transform ──
-  const [scale, setScale] = useState(1);
-  const [ctrlHeld, setCtrlHeld] = useState(false);
-
-  // Track Ctrl key
-  useEffect(() => {
-    const onDown = (e: KeyboardEvent) => { if (e.key === "Control") setCtrlHeld(true); };
-    const onUp = (e: KeyboardEvent) => { if (e.key === "Control") setCtrlHeld(false); };
-    // Ctrl released khi window mất focus
-    const onBlur = () => setCtrlHeld(false);
-    window.addEventListener("keydown", onDown);
-    window.addEventListener("keyup", onUp);
-    window.addEventListener("blur", onBlur);
-    return () => {
-      window.removeEventListener("keydown", onDown);
-      window.removeEventListener("keyup", onUp);
-      window.removeEventListener("blur", onBlur);
-    };
-  }, []);
-
-  // Ctrl+wheel trên overlay → zoom bằng CSS transform
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setScale((prev) => {
-      const next = Math.round((prev + delta) * 10) / 10;
-      return Math.min(Math.max(next, 0.5), 3);
-    });
-  }, []);
-
-  // Double-click overlay → reset zoom
-  const handleDoubleClick = useCallback(() => {
-    setScale(1);
-  }, []);
+  const pdfAreaRef = useRef<HTMLDivElement>(null);
 
   const { data: blockData, isLoading: isQueryLoading } = useQuery({
     queryKey: ["block-detail", usageKey, username],
@@ -96,19 +61,31 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
     }
   }, []);
 
-  // Khi thoát fullscreen → reload iframe + reset zoom
+  // Khi thoát fullscreen → reload iframe để PDF viewer reset kích thước
   useEffect(() => {
     const handler = () => {
       const isFull = !!document.fullscreenElement;
       setIsFullscreen(isFull);
       if (!isFull) {
-        setScale(1);
         setIsLoading(true);
         setIframeKey((k) => k + 1);
       }
     };
     document.addEventListener("fullscreenchange", handler);
     return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  // Chặn Ctrl+wheel zoom ở chế độ mini (không fullscreen)
+  useEffect(() => {
+    const el = pdfAreaRef.current;
+    if (!el) return;
+    const blockZoom = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+      }
+    };
+    el.addEventListener("wheel", blockZoom, { passive: false });
+    return () => el.removeEventListener("wheel", blockZoom);
   }, []);
 
   // ── Loading ──
@@ -132,7 +109,6 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
   }
 
   const embedUrl = toEmbedUrl(svd.pdf_url);
-  const zoomPercent = Math.round(scale * 100);
 
   return (
     <div
@@ -150,22 +126,11 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate">{svd.display_name}</p>
-            <p className="text-[11px] text-white/40 font-medium">Ctrl + cuộn chuột để zoom · Double-click để reset</p>
+            <p className="text-[11px] text-white/40 font-medium">Nhấn toàn màn hình để xem chi tiết</p>
           </div>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          {/* Zoom indicator */}
-          {scale !== 1 && (
-            <button
-              onClick={handleDoubleClick}
-              className="flex items-center justify-center h-7 px-2 rounded-md text-[11px] font-semibold text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-              title="Reset zoom"
-            >
-              {zoomPercent}%
-            </button>
-          )}
-
           {/* Mở trong tab mới */}
           <a
             href={svd.pdf_url}
@@ -188,11 +153,11 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
         </div>
       </div>
 
-      {/* ── PDF iframe + zoom overlay ── */}
+      {/* ── PDF iframe ── */}
       <div
-        ref={pdfWrapperRef}
+        ref={pdfAreaRef}
         className={cn(
-          "relative overflow-auto bg-white dark:bg-slate-900",
+          "relative bg-white dark:bg-slate-900",
           isFullscreen ? "flex-1" : ""
         )}
         style={isFullscreen ? undefined : { height: "calc(70vh - 44px)" }}
@@ -205,30 +170,14 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
             </div>
           </div>
         )}
-
-        {/* Iframe với CSS transform zoom */}
         <iframe
           key={iframeKey}
           src={embedUrl}
           title={svd.display_name}
-          className={cn("border-0 origin-top-left", isLoading ? "invisible" : "")}
-          style={{
-            width: `${100 / scale}%`,
-            height: `${100 / scale}%`,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-          }}
+          className={cn("w-full h-full border-0", isLoading ? "invisible" : "")}
           allow="autoplay"
           loading="lazy"
           onLoad={() => setIsLoading(false)}
-        />
-
-        {/* Overlay bắt Ctrl+wheel để zoom — chỉ active khi Ctrl đang giữ */}
-        <div
-          className="absolute inset-0 z-[5]"
-          style={{ pointerEvents: ctrlHeld ? "auto" : "none" }}
-          onWheel={handleWheel}
-          onDoubleClick={handleDoubleClick}
         />
       </div>
     </div>
