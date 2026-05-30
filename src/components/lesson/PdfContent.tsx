@@ -18,9 +18,13 @@ interface PdfData {
   pdf_url: string;
 }
 
+// Chiều cao toolbar mặc định của Chrome PDF viewer (px).
+// Toolbar vẫn hoạt động (zoom in/out OK) nhưng bị đẩy ra ngoài viewport bằng CSS.
+const PDF_TOOLBAR_HEIGHT = 36;
+
 /**
  * Chuyển Google Drive share link → embed preview link.
- * Với URL trực tiếp (asset), fit width mặc định.
+ * Với URL trực tiếp (asset), fit width mặc định, giữ toolbar để zoom hoạt động.
  */
 function toEmbedUrl(url: string): string {
   if (!url.trim()) return "";
@@ -28,7 +32,8 @@ function toEmbedUrl(url: string): string {
   if (driveMatch) {
     return `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
   }
-  // Giữ native toolbar để zoom in/out hoạt động đúng, ẩn navpanes, fit width
+  // Giữ toolbar (KHÔNG dùng toolbar=0) → zoom in/out bằng Ctrl+scroll hoạt động đúng
+  // CSS sẽ ẩn toolbar bằng cách đẩy iframe lên trên
   return url.trim() + "#navpanes=0&view=FitH";
 }
 
@@ -140,10 +145,16 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
       </div>
 
       {/* ── PDF iframe ── */}
-      <div className={cn(
-        "relative bg-white dark:bg-slate-900",
-        isFullscreen ? "flex-1" : ""
-      )} style={isFullscreen ? undefined : { height: "calc(70vh - 44px)" }}>
+      {/* Ẩn native toolbar bằng CSS: đẩy iframe lên trên bằng margin-top âm,
+          container overflow:hidden cắt phần toolbar ra khỏi viewport.
+          Toolbar vẫn tồn tại → Ctrl+scroll zoom in/out hoạt động bình thường. */}
+      <div
+        className={cn(
+          "relative overflow-hidden bg-white dark:bg-slate-900",
+          isFullscreen ? "flex-1" : ""
+        )}
+        style={isFullscreen ? undefined : { height: `calc(70vh - 44px)` }}
+      >
         {isLoading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white dark:bg-slate-900">
             <div className="flex flex-col items-center gap-3">
@@ -156,7 +167,11 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           key={iframeKey}
           src={embedUrl}
           title={svd.display_name}
-          className={cn("w-full h-full", isLoading ? "invisible" : "")}
+          className={cn("w-full border-0", isLoading ? "invisible" : "")}
+          style={{
+            marginTop: `-${PDF_TOOLBAR_HEIGHT}px`,
+            height: `calc(100% + ${PDF_TOOLBAR_HEIGHT}px)`,
+          }}
           allow="autoplay"
           loading="lazy"
           onLoad={() => setIsLoading(false)}
