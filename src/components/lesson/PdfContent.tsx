@@ -36,6 +36,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
   const username = useAuthStore((s) => s.user?.username);
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: blockData, isLoading: isQueryLoading } = useQuery({
@@ -59,8 +60,16 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
   }, []);
 
   // Listen for fullscreen change (esc key, etc.)
+  // Khi thoát fullscreen → reload iframe để PDF viewer reset kích thước
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      const isFull = !!document.fullscreenElement;
+      setIsFullscreen(isFull);
+      if (!isFull) {
+        setIsLoading(true);
+        setIframeKey((k) => k + 1);
+      }
+    };
     document.addEventListener("fullscreenchange", handler);
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
@@ -144,6 +153,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           </div>
         )}
         <iframe
+          key={iframeKey}
           src={embedUrl}
           title={svd.display_name}
           className={cn("w-full h-full", isLoading ? "invisible" : "")}

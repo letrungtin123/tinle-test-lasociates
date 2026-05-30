@@ -409,7 +409,7 @@ export function LessonDetailPage() {
                     // Nếu chỉ có ảnh, không có text → render full width, không cần khung border cha
                     if (isImageOnly) {
                       return (
-                        <div key={comp.id} className="w-full">
+                        <div key={comp.id} className="w-full rounded-3xl border border-border shadow-sm bg-card overflow-hidden">
                           {images.length >= 2 ? (
                             <LessonImageCarousel
                               images={images}
