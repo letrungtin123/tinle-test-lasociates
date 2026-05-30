@@ -38,8 +38,8 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
+  const [ctrlHeld, setCtrlHeld] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const pdfAreaRef = useRef<HTMLDivElement>(null);
 
   const { data: blockData, isLoading: isQueryLoading } = useQuery({
     queryKey: ["block-detail", usageKey, username],
@@ -75,17 +75,19 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
-  // Chặn Ctrl+wheel zoom ở chế độ mini (không fullscreen)
+  // Track Ctrl key để bật overlay chặn zoom trên iframe
   useEffect(() => {
-    const el = pdfAreaRef.current;
-    if (!el) return;
-    const blockZoom = (e: WheelEvent) => {
-      if (e.ctrlKey) {
-        e.preventDefault();
-      }
+    const onDown = (e: KeyboardEvent) => { if (e.key === "Control") setCtrlHeld(true); };
+    const onUp = (e: KeyboardEvent) => { if (e.key === "Control") setCtrlHeld(false); };
+    const onBlur = () => setCtrlHeld(false);
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+      window.removeEventListener("blur", onBlur);
     };
-    el.addEventListener("wheel", blockZoom, { passive: false });
-    return () => el.removeEventListener("wheel", blockZoom);
   }, []);
 
   // ── Loading ──
@@ -155,7 +157,6 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
 
       {/* ── PDF iframe ── */}
       <div
-        ref={pdfAreaRef}
         className={cn(
           "relative bg-white dark:bg-slate-900",
           isFullscreen ? "flex-1" : ""
@@ -179,6 +180,15 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           loading="lazy"
           onLoad={() => setIsLoading(false)}
         />
+        {/* Overlay chặn Ctrl+wheel zoom — chỉ active khi Ctrl đang giữ,
+            bình thường pointer-events: none nên không ảnh hưởng scroll/click PDF */}
+        {!isFullscreen && (
+          <div
+            className="absolute inset-0 z-[5]"
+            style={{ pointerEvents: ctrlHeld ? "auto" : "none" }}
+            onWheel={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          />
+        )}
       </div>
     </div>
   );
