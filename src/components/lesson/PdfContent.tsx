@@ -7,7 +7,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getBlockDetail } from "@/api/blocks";
-import { FileText, Loader2, Maximize, Minimize, ExternalLink, ZoomIn, ZoomOut } from "lucide-react";
+import { FileText, Loader2, Maximize, Minimize, ExternalLink } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -20,17 +20,16 @@ interface PdfData {
 
 /**
  * Chuyển Google Drive share link → embed preview link.
- * Với URL trực tiếp (asset), ẩn toolbar mặc định của trình duyệt.
+ * Với URL trực tiếp (asset), fit width mặc định.
  */
-function toEmbedUrl(url: string, zoom?: number): string {
+function toEmbedUrl(url: string): string {
   if (!url.trim()) return "";
   const driveMatch = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
   if (driveMatch) {
     return `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
   }
-  // Ẩn toolbar mặc định, fit width, set zoom nếu có
-  const zoomParam = zoom ? `&zoom=${zoom}` : "";
-  return url.trim() + `#toolbar=0&navpanes=0&view=FitH${zoomParam}`;
+  // Giữ native toolbar để zoom in/out hoạt động đúng, ẩn navpanes, fit width
+  return url.trim() + "#navpanes=0&view=FitH";
 }
 
 export function PdfContent({ usageKey }: { usageKey: string }) {
@@ -38,36 +37,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
-  const [zoomLevel, setZoomLevel] = useState(100);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const ZOOM_STEP = 25;
-  const ZOOM_MIN = 50;
-  const ZOOM_MAX = 300;
-
-  const handleZoomIn = useCallback(() => {
-    setZoomLevel((prev) => {
-      const next = Math.min(prev + ZOOM_STEP, ZOOM_MAX);
-      setIsLoading(true);
-      setIframeKey((k) => k + 1);
-      return next;
-    });
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    setZoomLevel((prev) => {
-      const next = Math.max(prev - ZOOM_STEP, ZOOM_MIN);
-      setIsLoading(true);
-      setIframeKey((k) => k + 1);
-      return next;
-    });
-  }, []);
-
-  const handleZoomReset = useCallback(() => {
-    setZoomLevel(100);
-    setIsLoading(true);
-    setIframeKey((k) => k + 1);
-  }, []);
 
   const { data: blockData, isLoading: isQueryLoading } = useQuery({
     queryKey: ["block-detail", usageKey, username],
@@ -96,7 +66,6 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
       const isFull = !!document.fullscreenElement;
       setIsFullscreen(isFull);
       if (!isFull) {
-        setZoomLevel(100);
         setIsLoading(true);
         setIframeKey((k) => k + 1);
       }
@@ -125,7 +94,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
     );
   }
 
-  const embedUrl = toEmbedUrl(svd.pdf_url, zoomLevel !== 100 ? zoomLevel : undefined);
+  const embedUrl = toEmbedUrl(svd.pdf_url);
 
   return (
     <div
@@ -143,40 +112,11 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate">{svd.display_name}</p>
-            <p className="text-[11px] text-white/40 font-medium">Dùng nút +/- để phóng to / thu nhỏ</p>
+            <p className="text-[11px] text-white/40 font-medium">Dùng Ctrl + cuộn chuột để phóng to / thu nhỏ</p>
           </div>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          {/* Zoom controls */}
-          <button
-            onClick={handleZoomOut}
-            disabled={zoomLevel <= ZOOM_MIN}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Thu nhỏ"
-          >
-            <ZoomOut className="h-4 w-4" />
-          </button>
-
-          <button
-            onClick={handleZoomReset}
-            className="flex items-center justify-center h-8 min-w-[48px] rounded-lg text-[11px] font-semibold text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-            title="Đặt lại zoom"
-          >
-            {zoomLevel}%
-          </button>
-
-          <button
-            onClick={handleZoomIn}
-            disabled={zoomLevel >= ZOOM_MAX}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Phóng to"
-          >
-            <ZoomIn className="h-4 w-4" />
-          </button>
-
-          <div className="w-px h-5 bg-white/20 mx-1" />
-
           {/* Mở trong tab mới */}
           <a
             href={svd.pdf_url}

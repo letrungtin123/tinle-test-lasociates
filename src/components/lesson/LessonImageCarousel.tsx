@@ -22,7 +22,7 @@ export function LessonImageCarousel({ images, onImageClick }: LessonImageCarouse
   };
 
   return (
-    <div className="relative w-full mb-6 group rounded-2xl overflow-hidden bg-muted/20 flex flex-col items-center justify-center border border-border shadow-sm">
+    <div className="relative w-full mb-6 group rounded-2xl overflow-hidden bg-muted/20 flex flex-col items-center justify-center">
       {/* Container ảnh với fixed chiều cao tối đa để giữ layout ổn định */}
       <div 
         className="relative w-full h-[350px] md:h-[450px] 2xl:h-[550px] flex items-center justify-center p-4 cursor-zoom-in"
