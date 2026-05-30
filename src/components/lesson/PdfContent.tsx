@@ -38,8 +38,8 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
-  const [ctrlHeld, setCtrlHeld] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   const { data: blockData, isLoading: isQueryLoading } = useQuery({
     queryKey: ["block-detail", usageKey, username],
@@ -75,20 +75,32 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
-  // Track Ctrl key để bật overlay chặn zoom trên iframe
+  // Overlay luôn active: chặn zoom (Ctrl+wheel và trackpad pinch),
+  // cho scroll thường đi qua bằng cách tạm tắt overlay.
   useEffect(() => {
-    const onDown = (e: KeyboardEvent) => { if (e.key === "Control") setCtrlHeld(true); };
-    const onUp = (e: KeyboardEvent) => { if (e.key === "Control") setCtrlHeld(false); };
-    const onBlur = () => setCtrlHeld(false);
-    window.addEventListener("keydown", onDown);
-    window.addEventListener("keyup", onUp);
-    window.addEventListener("blur", onBlur);
-    return () => {
-      window.removeEventListener("keydown", onDown);
-      window.removeEventListener("keyup", onUp);
-      window.removeEventListener("blur", onBlur);
+    const el = overlayRef.current;
+    if (!el) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const handler = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        // Chặn zoom: Ctrl+scroll hoặc trackpad pinch
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      // Scroll thường: tạm tắt overlay để wheel event tiếp theo đến iframe
+      el.style.pointerEvents = "none";
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { el.style.pointerEvents = "auto"; }, 80);
     };
-  }, []);
+
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", handler);
+      if (timer) clearTimeout(timer);
+    };
+  }, [isFullscreen]);
 
   // ── Loading ──
   if (isQueryLoading) {
@@ -180,13 +192,13 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           loading="lazy"
           onLoad={() => setIsLoading(false)}
         />
-        {/* Overlay chặn Ctrl+wheel zoom — chỉ active khi Ctrl đang giữ,
-            bình thường pointer-events: none nên không ảnh hưởng scroll/click PDF */}
+        {/* Overlay luôn active ở mini mode: chặn zoom (Ctrl+wheel + trackpad pinch),
+            scroll thường tự động pass-through qua iframe */}
         {!isFullscreen && (
           <div
+            ref={overlayRef}
             className="absolute inset-0 z-[5]"
-            style={{ pointerEvents: ctrlHeld ? "auto" : "none" }}
-            onWheel={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            style={{ pointerEvents: "auto" }}
           />
         )}
       </div>
