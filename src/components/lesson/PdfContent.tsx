@@ -122,6 +122,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
     );
   }
 
+  const isDriveUrl = svd.pdf_url.includes("drive.google.com");
   const embedUrl = toEmbedUrl(svd.pdf_url);
 
   return (
@@ -192,9 +193,8 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           loading="lazy"
           onLoad={() => setIsLoading(false)}
         />
-        {/* Overlay luôn active ở mini mode: chặn zoom (Ctrl+wheel + trackpad pinch),
-            scroll thường tự động pass-through qua iframe */}
-        {!isFullscreen && (
+        {/* Overlay mini mode: chặn zoom chỉ cho PDF upload (không áp dụng Drive link) */}
+        {!isFullscreen && !isDriveUrl && (
           <div
             ref={overlayRef}
             className="absolute inset-0 z-[5]"
