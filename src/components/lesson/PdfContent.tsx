@@ -140,7 +140,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate">{svd.display_name}</p>
-            <p className="text-[11px] text-white/40 font-medium">Nhấn toàn màn hình để xem chi tiết</p>
+            <p className="text-[11px] text-white/40 font-medium">Nhấn toàn màn hình để xem chi tiết và click tương tác</p>
           </div>
         </div>
 
