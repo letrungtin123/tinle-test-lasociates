@@ -69,6 +69,8 @@ export function PdfJsViewer({ url, isFullscreen, className, onError }: PdfJsView
       const pdfDoc = await loadingTask.promise;
       pdfDocRef.current = pdfDoc;
 
+      console.log("[PdfJsViewer] ✅ PDF loaded, pages:", pdfDoc.numPages);
+
       // Clear container
       container.innerHTML = "";
 
@@ -112,8 +114,11 @@ export function PdfJsViewer({ url, isFullscreen, className, onError }: PdfJsView
 
         // Lấy annotations (links) → tạo overlay clickable
         const annotations = await page.getAnnotations();
+        console.log(`[PdfJsViewer] Page ${pageNum} annotations:`, annotations.filter((a: Record<string, unknown>) => a.subtype === "Link"));
         for (const annot of annotations) {
-          if (annot.subtype === "Link" && annot.url) {
+          // pdfjs v6: link URL có thể ở annot.url hoặc annot.unsafeUrl
+          const linkUrl = annot.url || annot.unsafeUrl;
+          if (annot.subtype === "Link" && linkUrl) {
             const [x1, y1, x2, y2] = annot.rect;
 
             // Chuyển PDF coords (bottom-left origin) → DOM coords (top-left origin)
@@ -123,7 +128,7 @@ export function PdfJsViewer({ url, isFullscreen, className, onError }: PdfJsView
             const height = (y2 - y1) * scale;
 
             const linkEl = document.createElement("a");
-            linkEl.href = annot.url;
+            linkEl.href = linkUrl;
             linkEl.target = "_blank";
             linkEl.rel = "noopener noreferrer";
             linkEl.style.position = "absolute";

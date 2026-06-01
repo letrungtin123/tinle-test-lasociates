@@ -214,7 +214,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
             url={svd.pdf_url}
             isFullscreen={isFullscreen}
             className="w-full h-full"
-            onError={() => setUsePdfJs(false)}
+            onError={() => { console.log("[PdfContent] ⚠️ PDF.js failed, fallback to iframe"); setUsePdfJs(false); }}
           />
         )}
       </div>
