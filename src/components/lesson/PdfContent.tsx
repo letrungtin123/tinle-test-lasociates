@@ -188,6 +188,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           src={embedUrl}
           title={svd.display_name}
           className={cn("w-full h-full border-0", isLoading ? "invisible" : "")}
+          sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
           allow="autoplay"
           loading="lazy"
           onLoad={() => setIsLoading(false)}
