@@ -9,7 +9,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getBlockDetail } from "@/api/blocks";
-import { FileText, Loader2, Maximize, Minimize, ExternalLink } from "lucide-react";
+import { FileText, Loader2, Maximize, Minimize, ExternalLink, Lightbulb } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -140,7 +140,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate">{svd.display_name}</p>
-            <p className="text-[11px] text-white/40 font-medium">Nhấn toàn màn hình để xem chi tiết và click tương tác</p>
+            <p className="text-[11px] text-amber-400 font-medium flex items-center gap-1"><Lightbulb className="h-3 w-3 shrink-0" />Nhấn toàn màn hình để xem chi tiết và click tương tác</p>
           </div>
         </div>
 
