@@ -50,7 +50,22 @@ export function PdfJsViewer({ url, isFullscreen, className, onError }: PdfJsView
       setError(null);
       setPageLinks([]);
 
-      const loadingTask = pdfjsLib.getDocument({ url: pdfUrl });
+      // Chuyển absolute URL → relative để đi qua Vite proxy (dev) / same-origin (prod)
+      // VD: https://lms.example.com/asset-v1:... → /asset-v1:...
+      let fetchUrl = pdfUrl;
+      try {
+        const parsed = new URL(pdfUrl, window.location.origin);
+        if (parsed.origin !== window.location.origin) {
+          fetchUrl = parsed.pathname + parsed.search;
+        }
+      } catch { /* URL không hợp lệ, giữ nguyên */ }
+
+      // Fetch PDF qua app proxy → tránh CORS
+      const response = await fetch(fetchUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const arrayBuffer = await response.arrayBuffer();
+
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
       const pdfDoc = await loadingTask.promise;
       pdfDocRef.current = pdfDoc;
 
