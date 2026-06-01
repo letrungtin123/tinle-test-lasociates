@@ -14,7 +14,6 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { PdfJsViewer } from "@/components/lesson/PdfJsViewer";
 
 interface PdfData {
   display_name: string;
@@ -41,8 +40,6 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
   const [iframeKey, setIframeKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  // PDF.js fallback: thử PDF.js trước, nếu lỗi (CORS) → chuyển về iframe
-  const [usePdfJs, setUsePdfJs] = useState(true);
 
   const { data: blockData, isLoading: isQueryLoading } = useQuery({
     queryKey: ["block-detail", usageKey, username],
@@ -125,7 +122,6 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
     );
   }
 
-  const driveUrl = svd.pdf_url.includes("drive.google.com");
   const embedUrl = toEmbedUrl(svd.pdf_url);
 
   return (
@@ -171,7 +167,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
         </div>
       </div>
 
-      {/* ── PDF Content Area ── */}
+      {/* ── PDF iframe ── */}
       <div
         className={cn(
           "relative bg-white dark:bg-slate-900",
@@ -179,42 +175,30 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
         )}
         style={isFullscreen ? undefined : { height: "calc(70vh - 44px)" }}
       >
-        {driveUrl || !usePdfJs ? (
-          /* Google Drive embed hoặc PDF.js fallback: dùng iframe */
-          <>
-            {isLoading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white dark:bg-slate-900">
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground font-medium">Đang tải tài liệu...</p>
-                </div>
-              </div>
-            )}
-            <iframe
-              key={iframeKey}
-              src={embedUrl}
-              title={svd.display_name}
-              className={cn("w-full h-full border-0", isLoading ? "invisible" : "")}
-              allow="autoplay"
-              loading="lazy"
-              onLoad={() => setIsLoading(false)}
-            />
-            {/* Overlay mini mode: chặn zoom (Ctrl+wheel + trackpad pinch) */}
-            {!isFullscreen && (
-              <div
-                ref={overlayRef}
-                className="absolute inset-0 z-[5]"
-                style={{ pointerEvents: "auto" }}
-              />
-            )}
-          </>
-        ) : (
-          /* PDF upload trực tiếp: dùng PDF.js → link luôn mở tab mới */
-          <PdfJsViewer
-            url={svd.pdf_url}
-            isFullscreen={isFullscreen}
-            className="w-full h-full"
-            onError={() => { console.log("[PdfContent] ⚠️ PDF.js failed, fallback to iframe"); setUsePdfJs(false); }}
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white dark:bg-slate-900">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground font-medium">Đang tải tài liệu...</p>
+            </div>
+          </div>
+        )}
+        <iframe
+          key={iframeKey}
+          src={embedUrl}
+          title={svd.display_name}
+          className={cn("w-full h-full border-0", isLoading ? "invisible" : "")}
+          allow="autoplay"
+          loading="lazy"
+          onLoad={() => setIsLoading(false)}
+        />
+        {/* Overlay luôn active ở mini mode: chặn zoom (Ctrl+wheel + trackpad pinch),
+            scroll thường tự động pass-through qua iframe */}
+        {!isFullscreen && (
+          <div
+            ref={overlayRef}
+            className="absolute inset-0 z-[5]"
+            style={{ pointerEvents: "auto" }}
           />
         )}
       </div>
