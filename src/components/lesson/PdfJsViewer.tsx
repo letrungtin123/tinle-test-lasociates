@@ -17,6 +17,8 @@ interface PdfJsViewerProps {
   url: string;
   isFullscreen: boolean;
   className?: string;
+  /** Gọi khi PDF.js không load được → parent có thể fallback về iframe */
+  onError?: () => void;
 }
 
 interface LinkAnnotation {
@@ -24,7 +26,7 @@ interface LinkAnnotation {
   rect: DOMRect;
 }
 
-export function PdfJsViewer({ url, isFullscreen, className }: PdfJsViewerProps) {
+export function PdfJsViewer({ url, isFullscreen, className, onError }: PdfJsViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,6 +147,8 @@ export function PdfJsViewer({ url, isFullscreen, className }: PdfJsViewerProps) 
       console.error("PDF.js render error:", err);
       setError("Không thể tải tài liệu PDF");
       setIsLoading(false);
+      // Thông báo parent để fallback
+      onError?.();
     }
   }, []);
 

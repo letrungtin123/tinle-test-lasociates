@@ -41,6 +41,8 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
   const [iframeKey, setIframeKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  // PDF.js fallback: thử PDF.js trước, nếu lỗi (CORS) → chuyển về iframe
+  const [usePdfJs, setUsePdfJs] = useState(true);
 
   const { data: blockData, isLoading: isQueryLoading } = useQuery({
     queryKey: ["block-detail", usageKey, username],
@@ -177,8 +179,8 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
         )}
         style={isFullscreen ? undefined : { height: "calc(70vh - 44px)" }}
       >
-        {driveUrl ? (
-          /* Google Drive embed: dùng iframe (Google không cho fetch trực tiếp) */
+        {driveUrl || !usePdfJs ? (
+          /* Google Drive embed hoặc PDF.js fallback: dùng iframe */
           <>
             {isLoading && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-white dark:bg-slate-900">
@@ -212,6 +214,7 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
             url={svd.pdf_url}
             isFullscreen={isFullscreen}
             className="w-full h-full"
+            onError={() => setUsePdfJs(false)}
           />
         )}
       </div>
