@@ -122,7 +122,6 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
     );
   }
 
-  const isDriveUrl = svd.pdf_url.includes("drive.google.com");
   const embedUrl = toEmbedUrl(svd.pdf_url);
 
   return (
@@ -189,11 +188,6 @@ export function PdfContent({ usageKey }: { usageKey: string }) {
           src={embedUrl}
           title={svd.display_name}
           className={cn("w-full h-full border-0", isLoading ? "invisible" : "")}
-          // Drive embed: Google tự xử lý link → không cần sandbox
-          // PDF upload: sandbox chặn top-navigation, link buộc mở tab mới
-          {...(!isDriveUrl && {
-            sandbox: "allow-scripts allow-popups allow-popups-to-escape-sandbox"
-          })}
           allow="autoplay"
           loading="lazy"
           onLoad={() => setIsLoading(false)}
