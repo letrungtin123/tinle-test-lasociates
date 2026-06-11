@@ -205,6 +205,23 @@ function buildComponent(
       console.error("Failed to parse diagram_data", e);
     }
   }
+  if (block.type === "la_single_quiz") {
+    comp.singleQuizUsageKey = block.id;
+    const svd = block.student_view_data as Record<string, unknown> | undefined;
+    if (svd) {
+      comp.quizImages = Array.isArray(svd.images) ? svd.images as string[] : [];
+      comp.quizVideoUrl = (svd.video_url as string) || null;
+    }
+  }
+
+  if (block.type === "la_multi_quiz") {
+    comp.multiQuizUsageKey = block.id;
+    const svd = block.student_view_data as Record<string, unknown> | undefined;
+    if (svd) {
+      comp.quizImages = Array.isArray(svd.images) ? svd.images as string[] : [];
+      comp.quizVideoUrl = (svd.video_url as string) || null;
+    }
+  }
 
   return comp;
 }
@@ -221,6 +238,8 @@ function determineLessonType(
     if (c.type === "la_crossword") return "quiz";
     if (c.type === "la_sortable") return "quiz";
     if (c.type === "la_diagram") return "quiz";
+    if (c.type === "la_single_quiz") return "quiz";
+    if (c.type === "la_multi_quiz") return "quiz";
     if (c.type === "la_faq") return "slide";
     if (c.type === "la_pdf") return "slide";
   }

@@ -89,7 +89,7 @@ function getChildrenOfType(
  *
  * Một sequential "hoàn thành" khi tất cả leaf blocks đều completion = 1.0
  */
-const LEAF_TYPES = new Set(["html", "video", "problem", "la_crossword", "la_sortable", "la_diagram", "la_faq", "la_pdf", "discussion", "done"]);
+const LEAF_TYPES = new Set(["html", "video", "problem", "la_crossword", "la_sortable", "la_diagram", "la_faq", "la_pdf", "la_single_quiz", "la_multi_quiz", "discussion", "done"]);
 
 function calcAggregatedCompletion(
   block: Block,

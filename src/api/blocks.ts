@@ -15,7 +15,7 @@ export async function getBlockDetail(usageKey: string, username?: string): Promi
       params: {
         requested_fields:
           "student_view_data,display_name,type,children,completion",
-        student_view_data: "video,html,la_crossword,la_sortable,la_diagram,la_faq,la_pdf",
+        student_view_data: "video,html,la_crossword,la_sortable,la_diagram,la_faq,la_pdf,la_single_quiz,la_multi_quiz",
         ...(username ? { username } : {}),
       },
     }
@@ -155,6 +155,50 @@ export async function submitSortableAnswer(
   const { data } = await apiClient.post(
     `/courses/${courseKey}/xblock/${usageKey}/handler/submit_answers`,
     { answer },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return data;
+}
+
+/**
+ * Submit đáp án Quiz 1 đáp án (la_single_quiz).
+ * Dùng XBlock json_handler 'submit_answers'
+ */
+export async function submitSingleQuizAnswer(
+  usageKey: string,
+  answer: string
+): Promise<{ status: string; message: string }> {
+  const courseKey = extractCourseKey(usageKey);
+
+  const { data } = await apiClient.post(
+    `/courses/${courseKey}/xblock/${usageKey}/handler/submit_answers`,
+    { answer },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return data;
+}
+
+/**
+ * Submit đáp án Quiz nhiều đáp án (la_multi_quiz).
+ * Dùng XBlock json_handler 'submit_answers'
+ */
+export async function submitMultiQuizAnswer(
+  usageKey: string,
+  answers: string[]
+): Promise<{ status: string; message: string }> {
+  const courseKey = extractCourseKey(usageKey);
+
+  const { data } = await apiClient.post(
+    `/courses/${courseKey}/xblock/${usageKey}/handler/submit_answers`,
+    { answers },
     {
       headers: {
         "Content-Type": "application/json",

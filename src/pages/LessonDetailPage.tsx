@@ -26,6 +26,7 @@ import { SortableContent } from "@/components/lesson/SortableContent";
 import { FaqContent } from "@/components/lesson/FaqContent";
 import { PdfContent } from "@/components/lesson/PdfContent";
 import DiagramContent from "@/components/lesson/DiagramContent";
+import { SingleQuizContent, MultiQuizContent } from "@/components/lesson/MediaQuizContent";
 import { CompleteCourseModal } from "@/components/lesson/CompleteCourseModal";
 import { Course100PercentModal } from "@/components/lesson/Course100PercentModal";
 import { WelcomeCourseModal } from "@/components/lesson/WelcomeCourseModal";
@@ -46,7 +47,7 @@ const BadgeCyan = ({ children }: { children: React.ReactNode }) => (
 
 // Block types chỉ cần xem, không cần tương tác → auto-mark complete khi user navigate đến unit
 const PASSIVE_BLOCK_TYPES = ["html", "video", "la_diagram", "la_faq", "la_pdf"];
-const INTERACTIVE_BLOCK_TYPES = ["problem", "la_crossword", "la_sortable"];
+const INTERACTIVE_BLOCK_TYPES = ["problem", "la_crossword", "la_sortable", "la_single_quiz", "la_multi_quiz"];
 
 export function LessonDetailPage() {
   const { courseId } = useParams();
@@ -534,6 +535,24 @@ export function LessonDetailPage() {
                     );
                   }
 
+                  if (comp.type === "la_single_quiz" && comp.singleQuizUsageKey) {
+                    return (
+                      <SingleQuizContent
+                        key={comp.id}
+                        usageKey={comp.singleQuizUsageKey}
+                      />
+                    );
+                  }
+
+                  if (comp.type === "la_multi_quiz" && comp.multiQuizUsageKey) {
+                    return (
+                      <MultiQuizContent
+                        key={comp.id}
+                        usageKey={comp.multiQuizUsageKey}
+                      />
+                    );
+                  }
+
                   return null;
                 })}
 
@@ -556,7 +575,7 @@ export function LessonDetailPage() {
                   isCompleting={completeMutation.isPending}
                   isCompleted={isCompleted}
                   isLastUnit={isLastUnit}
-                  hideCompleteButton={currentUnit?.components.some((c) => ["problem", "la_crossword", "la_sortable"].includes(c.type)) || false}
+                  hideCompleteButton={currentUnit?.components.some((c) => ["problem", "la_crossword", "la_sortable", "la_single_quiz", "la_multi_quiz"].includes(c.type)) || false}
                   onNextLesson={handleNextLesson}
                   hasNextLesson={!!nextLessonId}
                 />

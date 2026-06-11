@@ -48,6 +48,10 @@ export interface UnitComponent {
   faqUsageKey?: string | null;
   pdfUrl?: string | null;
   diagramData?: any;
+  singleQuizUsageKey?: string | null;
+  multiQuizUsageKey?: string | null;
+  quizImages?: string[];
+  quizVideoUrl?: string | null;
   studentViewUrl?: string | null;
 }
 
